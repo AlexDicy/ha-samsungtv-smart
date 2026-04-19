@@ -169,6 +169,7 @@ class SmartThingsTV:
         self._sound_mode_list = None
         self._picture_mode = None
         self._picture_mode_list = None
+        self._picture_mode_list_map = None
 
         self._is_forced_val = False
         self._forced_count = 0
@@ -510,6 +511,9 @@ class SmartThingsTV:
         self._picture_mode_list = self._load_json_list(
             dev_data, "supportedPictureModes"
         )
+        self._picture_mode_list_map = self._load_json_list(
+            dev_data, "supportedPictureModesMap"
+        )
 
         # Sources and channel
         self._source_list_map = self._load_json_list(
@@ -605,14 +609,30 @@ class SmartThingsTV:
         self._sound_mode = mode
 
     async def async_set_picture_mode(self, mode):
-        """Select picture mode"""
+        """Select picture mode. Accepts either the display name (e.g. "Standard")
+        or the id (e.g. "modeStandard"); the id is what the API actually needs."""
         if self._state != STStatus.STATE_ON:
             return
-        if mode not in self._picture_mode_list:
+        mode_id = mode
+        mode_name = mode
+        if self._picture_mode_list_map:
+            match = next(
+                (
+                    m
+                    for m in self._picture_mode_list_map
+                    if m.get("id") == mode or m.get("name") == mode
+                ),
+                None,
+            )
+            if match is None:
+                raise InvalidSmartThingsPictureMode()
+            mode_id = match.get("id", mode)
+            mode_name = match.get("name", mode)
+        elif self._picture_mode_list and mode not in self._picture_mode_list:
             raise InvalidSmartThingsPictureMode()
-        data_cmd = _command(COMMAND_PICTURE_MODE, [mode])
+        data_cmd = _command(COMMAND_PICTURE_MODE, [mode_id])
         await self._async_send_command(data_cmd)
-        self._picture_mode = mode
+        self._picture_mode = mode_name
 
 
 class InvalidSmartThingsSoundMode(RuntimeError):
