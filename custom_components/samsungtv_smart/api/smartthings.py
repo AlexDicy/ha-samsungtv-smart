@@ -94,11 +94,11 @@ COMMAND_REWIND = {
     "command": "rewind",
 }
 COMMAND_SOUND_MODE = {
-    "capability": "custom.soundmode",
+    "capability": "samsungvd.soundMode",
     "command": "setSoundMode",
 }
 COMMAND_PICTURE_MODE = {
-    "capability": "custom.picturemode",
+    "capability": "samsungvd.pictureMode",
     "command": "setPictureMode",
 }
 
@@ -404,9 +404,16 @@ class SmartThingsTV:
             api_command,
             headers=_headers(self._get_api_key()),
             data=data_cmd,
-            raise_for_status=True,
+            raise_for_status=False,
         ) as resp:
-            await resp.json()
+            resp_body = await resp.text()
+            if not resp.ok:
+                _LOGGER.error(
+                    "SmartThings command failed with status %s: %s",
+                    resp.status,
+                    resp_body,
+                )
+                resp.raise_for_status()
 
         await self._device_refresh()
 
