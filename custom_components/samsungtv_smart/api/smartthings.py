@@ -111,6 +111,7 @@ _LOGGER = logging.getLogger(__name__)
 def _headers(api_key: str) -> dict[str, str]:
     return {
         "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
         "Accept": "application/json",
         "Connection": "keep-alive",
     }
@@ -121,7 +122,7 @@ def _command(command: dict, arguments: list | None = None):
     if arguments:
         cmd["arguments"] = arguments
     cmd_full = {"commands": [cmd]}
-    return str(cmd_full)
+    return json.dumps(cmd_full)
 
 
 class STStatus(Enum):
